@@ -1,6 +1,6 @@
 # IP Address Tracker 🌍
 
-A simple web application to track and display geolocation information for any IP address.
+A simple web application to track and display geolocation information for any public IP address.
 
 ## Features ✨
 
