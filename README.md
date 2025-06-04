@@ -53,4 +53,6 @@ This project is open source and available under the **MIT License**
 
 [Live Demo](https://bjmdevelopers.github.io/IP-Address-Tracker-/)
 
+---
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
