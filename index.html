@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IP Address Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+        }
+
+        .search-box {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .results {
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .result-item {
+            display: flex;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .label {
+            font-weight: bold;
+            width: 120px;
+            color: #555;
+        }
+
+        .value {
+            flex: 1;
+            color: #222;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            display: none;
+        }
+
+        .error {
+            color: #d32f2f;
+            text-align: center;
+            padding: 10px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .note {
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 600px) {
+            .search-box {
+                flex-direction: column;
+            }
+            
+            .result-item {
+                flex-direction: column;
+            }
+            
+            .label {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>IP Address Tracker</h1>
+        <div class="search-box">
+            <input type="text" id="ip-input" placeholder="Enter IP address (e.g., 8.8.8.8)">
+            <button id="search-btn">Search</button>
+            <button id="my-ip-btn">Use My IP</button>
+        </div>
+        
+        <div class="error" id="error-message"></div>
+        <div class="loading" id="loading">Loading IP data...</div>
+        
+        <div class="results" id="results">
+            <div class="result-item">
+                <span class="label">IP Address</span>
+                <span id="ip-address" class="value">-</span>
+            </div>
+            <div class="result-item">
+                <span class="label">Country</span>
+                <span id="country" class="value">-</span>
+            </div>
+            <div class="result-item">
+                <span class="label">Region/State</span>
+                <span id="region" class="value">-</span>
+            </div>
+            <div class="result-item">
+                <span class="label">City</span>
+                <span id="city" class="value">-</span>
+            </div>
+            <div class="result-item">
+                <span class="label">Postal Code</span>
+                <span id="postal" class="value">-<span class="note">(approximate location, may vary for privacy)</span></span>
+            </div>
+            <div class="result-item">
+                <span class="label">ISP</span>
+                <span id="isp" class="value">-</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchBtn = document.getElementById('search-btn');
+            const myIpBtn = document.getElementById('my-ip-btn');
+            const ipInput = document.getElementById('ip-input');
+            const loading = document.getElementById('loading');
+            const errorMsg = document.getElementById('error-message');
+            const results = document.getElementById('results');
+            
+            // Validate IP address format
+            function isValidIP(ip) {
+                const ipv4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+                const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+                return ipv4Regex.test(ip) || ipv6Regex.test(ip);
+            }
+            
+            function showLoading() {
+                loading.style.display = 'block';
+                results.style.display = 'none';
+                errorMsg.style.display = 'none';
+                searchBtn.disabled = true;
+                myIpBtn.disabled = true;
+            }
+            
+            function hideLoading() {
+                loading.style.display = 'none';
+                results.style.display = 'block';
+                searchBtn.disabled = false;
+                myIpBtn.disabled = false;
+            }
+            
+            function showError(message) {
+                errorMsg.textContent = message;
+                errorMsg.style.display = 'block';
+                results.style.display = 'none';
+            }
+            
+            function hideError() {
+                errorMsg.style.display = 'none';
+            }
+            
+            function trackIp(ip) {
+                showLoading();
+                hideError();
+                
+                fetch(`https://ipapi.co/${ip}/json/`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if(data.error) {
+                            throw new Error(data.reason || 'Error fetching IP data');
+                        }
+                        displayResults(data);
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError(error.message || 'Failed to fetch IP data');
+                        hideLoading();
+                    });
+            }
+            
+            searchBtn.addEventListener('click', function() {
+                const ip = ipInput.value.trim();
+                if(!ip) {
+                    showError('Please enter an IP address');
+                    return;
+                }
+                
+                if(!isValidIP(ip)) {
+                    showError('Please enter a valid IP address');
+                    return;
+                }
+                
+                trackIp(ip);
+            });
+            
+            myIpBtn.addEventListener('click', function() {
+                showLoading();
+                hideError();
+                
+                fetch('https://ipapi.co/json/')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if(data.error) {
+                            throw new Error(data.reason || 'Error fetching your IP data');
+                        }
+                        ipInput.value = data.ip;
+                        displayResults(data);
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError(error.message || 'Failed to fetch your IP data');
+                        hideLoading();
+                    });
+            });
+            
+            function displayResults(data) {
+                document.getElementById('ip-address').textContent = data.ip || '-';
+                document.getElementById('country').textContent = data.country_name || '-';
+                document.getElementById('region').textContent = data.region || '-';
+                document.getElementById('city').textContent = data.city || '-';
+                document.getElementById('postal').textContent = data.postal || '-';
+                document.getElementById('isp').textContent = data.org || '-';
+            }
+        });
+    </script>
+</body>
+</html>
