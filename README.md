@@ -51,7 +51,7 @@ This project is open source and available under the **MIT License**
 
 ## Live Demo 
 
-[Live Demo](https://bjmdevelopers.github.io/IP-Address-Tracker-/)
+[Live Demo](https://bjmdevelopers.github.io/IP-Address-Tracker/)
 
 ---
 
